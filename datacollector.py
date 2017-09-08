@@ -353,8 +353,7 @@ class DataCollectorConsumer(object):
         """Cleanly shutdown the connection to RabbitMQ by stopping the consumer
         with RabbitMQ. When RabbitMQ confirms the cancellation, on_cancelok
         will be invoked by pika, which will then closing the channel and
-        connection. The IOLoop is    # setting log options
-    LOGGER = logging.getLogger(__name__) started again because this method is invoked
+        connection. The IOLoop is started again because this method is invoked
         when CTRL-C is pressed raising a KeyboardInterrupt exception. This
         exception stops the IOLoop which needs to be running for pika to
         communicate with RabbitMQ. All of the commands issued prior to starting
