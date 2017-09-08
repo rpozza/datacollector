@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+__author__ = 'Riccardo Pozza, r.pozza@surrey.ac.uk'
 
 import logging
 import logging.handlers
@@ -70,7 +71,7 @@ class DataCollectorConsumer(object):
         :rtype: pika.SelectConnection
 
         """
-        print('Connecting to %s', self._url)
+        print "Connecting to " + str(self._url)
         return pika.SelectConnection(pika.URLParameters(self._url),
                                      self.on_connection_open,
                                      stop_ioloop_on_close=False)
@@ -83,7 +84,7 @@ class DataCollectorConsumer(object):
         :type unused_connection: pika.SelectConnection
 
         """
-        print('Connection opened')
+        print "Connection opened"
         self.add_on_connection_close_callback()
         self.open_channel()
 
@@ -92,7 +93,7 @@ class DataCollectorConsumer(object):
         when RabbitMQ closes the connection to the publisher unexpectedly.
 
         """
-        print('Adding connection close callback')
+        print "Adding connection close callback"
         self._connection.add_on_close_callback(self.on_connection_closed)
 
     def on_connection_closed(self, connection, reply_code, reply_text):
@@ -109,8 +110,7 @@ class DataCollectorConsumer(object):
         if self._closing:
             self._connection.ioloop.stop()
         else:
-            print('Connection closed, reopening in 5 seconds: (%s) %s',
-                           reply_code, reply_text)
+            print "Connection closed, reopening in 5 seconds: (" + str(reply_code) + ") " + str(reply_text)
             self._connection.add_timeout(5, self.reconnect)
 
     def reconnect(self):
@@ -135,7 +135,7 @@ class DataCollectorConsumer(object):
         on_channel_open callback will be invoked by pika.
 
         """
-        print('Creating a new channel')
+        print "Creating a new channel"
         self._connection.channel(on_open_callback=self.on_channel_open)
 
     def on_channel_open(self, channel):
@@ -147,7 +147,7 @@ class DataCollectorConsumer(object):
         :param pika.channel.Channel channel: The channel object
 
         """
-        print('Channel opened')
+        print "Channel opened"
         self._channel = channel
         self.add_on_channel_close_callback()
         self.setup_exchange(self.EXCHANGE)
@@ -157,7 +157,7 @@ class DataCollectorConsumer(object):
         RabbitMQ unexpectedly closes the channel.
 
         """
-        print('Adding channel close callback')
+        print "Adding channel close callback"
         self._channel.add_on_close_callback(self.on_channel_closed)
 
     def on_channel_closed(self, channel, reply_code, reply_text):
@@ -172,8 +172,7 @@ class DataCollectorConsumer(object):
         :param str reply_text: The text reason the channel was closed
 
         """
-        print('Channel %i was closed: (%s) %s',
-                       channel, reply_code, reply_text)
+        print "Channel " + str(channel) + " was closed: (" + str(reply_code) + ") " + str(reply_text)
         self._connection.close()
 
     def setup_exchange(self, exchange_name):
@@ -184,7 +183,7 @@ class DataCollectorConsumer(object):
         :param str|unicode exchange_name: The name of the exchange to declare
 
         """
-        print('Declaring exchange %s', exchange_name)
+        print "Declaring exchange " + str(exchange_name)
         self._channel.exchange_declare(self.on_exchange_declareok,
                                        exchange_name,
                                        self.EXCHANGE_TYPE)
@@ -196,7 +195,7 @@ class DataCollectorConsumer(object):
         :param pika.Frame.Method unused_frame: Exchange.DeclareOk response frame
 
         """
-        print('Exchange declared')
+        print "Exchange declared"
         self.setup_queue(self.QUEUE)
 
     def setup_queue(self, queue_name):
@@ -207,7 +206,7 @@ class DataCollectorConsumer(object):
         :param str|unicode queue_name: The name of the queue to declare.
 
         """
-        print('Declaring queue %s', queue_name)
+        print "Declaring queue " + str(queue_name)
         self._channel.queue_declare(self.on_queue_declareok, queue_name)
 
     def on_queue_declareok(self, method_frame):
@@ -220,8 +219,7 @@ class DataCollectorConsumer(object):
         :param pika.frame.Method method_frame: The Queue.DeclareOk frame
 
         """
-        print('Binding %s to %s with %s',
-                    self.EXCHANGE, self.QUEUE, self.ROUTING_KEY)
+        print "Binding " + str(self.EXCHANGE) + " to " + str(self.QUEUE) + " with " + str(self.ROUTING_KEY)
         self._channel.queue_bind(self.on_bindok, self.QUEUE,
                                  self.EXCHANGE, self.ROUTING_KEY)
 
@@ -233,7 +231,7 @@ class DataCollectorConsumer(object):
         :param pika.frame.Method unused_frame: The Queue.BindOk response frame
 
         """
-        print('Queue bound')
+        print "Queue bound"
         self.start_consuming()
 
     def start_consuming(self):
@@ -246,7 +244,7 @@ class DataCollectorConsumer(object):
         will invoke when a message is fully received.
 
         """
-        print('Issuing consumer related RPC commands')
+        print "Issuing consumer related RPC commands"
         self.add_on_cancel_callback()
         self._consumer_tag = self._channel.basic_consume(self.on_message,
                                                          self.QUEUE)
@@ -257,7 +255,7 @@ class DataCollectorConsumer(object):
         on_consumer_cancelled will be invoked by pika.
 
         """
-        print('Adding consumer cancellation callback')
+        print "Adding consumer cancellation callback"
         self._channel.add_on_cancel_callback(self.on_consumer_cancelled)
 
     def on_consumer_cancelled(self, method_frame):
@@ -267,8 +265,7 @@ class DataCollectorConsumer(object):
         :param pika.frame.Method method_frame: The Basic.Cancel frame
 
         """
-        print('Consumer was cancelled remotely, shutting down: %r',
-                    method_frame)
+        print "Consumer was cancelled remotely, shutting down: " + str(method_frame)
         if self._channel:
             self._channel.close()
 
@@ -300,7 +297,7 @@ class DataCollectorConsumer(object):
                 ret = self.lwm2m_start_observation(lwm2m_client, lwm2m_object)
                 print str(lwm2m_client) + ", " + str(lwm2m_object) + ", " + str(json.loads(ret.content)['status'])
         except Exception, e:
-            print ('Error Processing:' + str(e))
+            print "Error Processing:" + str(e)
         self.acknowledge_message(basic_deliver.delivery_tag)
 
     def acknowledge_message(self, delivery_tag):
@@ -318,7 +315,7 @@ class DataCollectorConsumer(object):
 
         """
         if self._channel:
-            print('Sending a Basic.Cancel RPC command to RabbitMQ')
+            print "Sending a Basic.Cancel RPC command to RabbitMQ"
             self._channel.basic_cancel(self.on_cancelok, self._consumer_tag)
 
     def on_cancelok(self, unused_frame):
@@ -330,15 +327,17 @@ class DataCollectorConsumer(object):
         :param pika.frame.Method unused_frame: The Basic.CancelOk frame
 
         """
-        print('RabbitMQ acknowledged the cancellation of the consumer')
+        print "RabbitMQ acknowledged the cancellation of the consumer"
         self.close_channel()
 
     def close_channel(self):
         """Call to close the channel with RabbitMQ cleanly by issuing the
         Channel.Close RPC command.
+#!/usr/bin/env python
+__author__ = 'Riccardo Pozza, r.pozza@surrey.ac.uk'
 
         """
-        print('Closing the channel')
+        print "Closing the channel"
         self._channel.close()
 
     def run(self):
@@ -360,15 +359,15 @@ class DataCollectorConsumer(object):
         the IOLoop will be buffered but not processed.
 
         """
-        print('Stopping')
+        print "Stopping"
         self._closing = True
         self.stop_consuming()
         self._connection.ioloop.start()
-        print('Stopped')
+        print "Stopped"
 
     def close_connection(self):
         """This method closes the connection to RabbitMQ."""
-        print('Closing connection')
+        print "Closing connection"
         self._connection.close()
 
     def lwm2m_start_observation(self, client, object):
@@ -420,7 +419,7 @@ def main():
     LOG_LEVEL = logging.INFO # setting log level to INFO but could be also "DEBUG" or "WARNING"
     LOGGER.setLevel(LOG_LEVEL)
     HANDLER = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME, when="midnight", backupCount=3) # set where we're logging and how
-    LOG_FORMAT = ('%(asctime)s %(levelname) %(name) %(funcName) %(lineno): %(message)s')  # set format of logging
+    LOG_FORMAT = ('%(asctime)s %(levelname)s %(name)s %(funcName)s %(lineno)d: %(message)s') # set format of logging
     FORMATTER = logging.Formatter(LOG_FORMAT)
     HANDLER.setFormatter(FORMATTER)
     LOGGER.addHandler(HANDLER)
